@@ -181,41 +181,38 @@ struct MyGeometry
 };
 
 void generateSphere(vector<vec3>& points, vector<vec3>& normals,
-   vector<unsigned int>& indices,
-   float c_r, float t_r, int uDivisions, int vDivisions)
+   vector<unsigned int>& indices, float r, int uDivisions, int vDivisions)
 {
-   float uStep = 1.f / (float)(uDivisions - 1);
-   float vStep = 1.f / (float)(vDivisions - 1);
+   float uStep = 360.0f / static_cast<float>(uDivisions);
+   float vStep = 360.0f / static_cast<float>(vDivisions);
 
    float u = 0.f;
+   float v = 0.f;
+   vec3 center = vec3(0.0f);
+
    // Traversing u
-   for (int i = 0; i<uDivisions; i++)
+   for (int i = 0; i < uDivisions; i++)
    {
-      vec3 center = vec3(c_r * cos(2.f* M_PI *u),
-         0.f,
-         c_r * sin(2.f * M_PI * u));
-      float v = 0.f;
       // Traversing v
-      for (int j = 0; j<vDivisions; j++)
+      for (int j = 0; j < vDivisions; j++)
       {
-         vec3 pos = vec3((c_r + t_r * cos(2.f*M_PI*v)) * cos(2.f*M_PI*u),
-            t_r * sin(2.f*M_PI*v),
-            (c_r + t_r * cos(2.f * M_PI * v)) * sin(2.f * M_PI * u)
-            );
+         vec3 pos = vec3(r * sin(u) * cos(v),
+            r * cos(u) * cos(v),
+            r * sin(v));
 
          vec3 normal = normalize(pos - center);
 
          points.push_back(pos);
          normals.push_back(normal);
-         v += vStep;
+         v += radians(vStep);
       }
 
-      u += uStep;
+      u += radians(uStep);
    }
-
+ 
    for (int i = 0; i < uDivisions - 1; i++)
    {
-      for (int j = 0; j< vDivisions - 1; j++)
+      for (int j = 0; j < vDivisions - 1; j++)
       {
          unsigned int p00 = i*vDivisions + j;
          unsigned int p01 = i*vDivisions + j + 1;
@@ -240,7 +237,7 @@ bool InitializeGeometry(MyGeometry *geometry)
    vector<vec3> normals;
    vector<unsigned int> indices;
 
-   generateSphere(points, normals, indices, 0.5f, 0.25f, 100, 20);
+   generateSphere(points, normals, indices, 1.0f, 48, 24);
 
    geometry->elementCount = indices.size();
 
@@ -401,7 +398,7 @@ int main(int argc, char *argv[])
 
    mat4  I(1);
 
-   float angle = 45;
+   float angle = 60.0f;
 
    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
