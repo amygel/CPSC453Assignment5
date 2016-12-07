@@ -16,6 +16,8 @@
 #include <string>
 #include <iterator>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // Specify that we want the OpenGL core profile before including GLFW headers
 #ifdef _WIN32
@@ -168,11 +170,12 @@ struct MyGeometry
    GLuint  vertexBuffer;
    GLuint  textureBuffer;
    GLuint  colourBuffer;
+   GLuint  elementBuffer;
    GLuint  vertexArray;
    GLsizei elementCount;
 
    // initialize object names to zero (OpenGL reserved value)
-   MyGeometry() : vertexBuffer(0), colourBuffer(0), vertexArray(0), elementCount(0)
+   MyGeometry() : vertexBuffer(0), colourBuffer(0), elementBuffer(0), vertexArray(0), elementCount(0)
    {}
 };
 
@@ -180,19 +183,53 @@ struct MyGeometry
 bool InitializeGeometry(MyGeometry *geometry)
 {
    // three vertex positions and assocated colours of a triangle
-   const GLfloat vertices[][2] = {
-      { -.6f, -.4f },
-      { .0f, .6f },
-      { .6f, -.4f }
+   const GLfloat vertices[][3] = {
+      { -1.f, -1.f, 1.f },
+      { -1.f, 1.f, 1.f },
+      { 1.f, 1.f, 1.f },
+      { 1.f, -1.f, 1.f },
+
+      { -1.f, -1.f, -1.f },
+      { -1.f, 1.f, -1.f },
+      { 1.f, 1.f, -1.f },
+      { 1.f, -1.f, -1.f }
    };
 
    const GLfloat colours[][3] = {
       { 1.0f, 0.0f, 0.0f },
       { 0.0f, 1.0f, 0.0f },
-      { 0.0f, 0.0f, 1.0f }
+      { 0.0f, 0.0f, 1.0f },
+      { 0.0f, 1.0f, 0.0f },
+
+      { 1.0f, 0.0f, 0.0f },
+      { 0.0f, 1.0f, 0.0f },
+      { 0.0f, 0.0f, 1.0f },
+      { 0.0f, 1.0f, 0.0f }
    };
 
-   geometry->elementCount = 3;
+   // Have all shapes have same orientation for program speed
+   const unsigned indices[][36] = // Cube Faces
+   {
+      0, 2, 1, // Front Face
+      0, 3, 2,
+
+      1, 6, 5, // Top
+      1, 2, 6,
+
+      3, 6, 2, // Right
+      3, 7, 6,
+
+      1, 4, 0, // Left
+      1, 5, 4,
+
+      0, 4, 7, // Bottom
+      0, 7, 3,
+
+      4, 6, 7, // Back
+      4, 5, 6
+   };
+
+   geometry->elementCount = 36;
 
    // these vertex attribute indices correspond to those specified for the
    // input variables in the vertex shader
@@ -213,9 +250,14 @@ bool InitializeGeometry(MyGeometry *geometry)
    glGenVertexArrays(1, &geometry->vertexArray);
    glBindVertexArray(geometry->vertexArray);
 
+   //==== make element array buffer
+   glGenBuffers(1, &geometry->elementBuffer);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometry->elementBuffer);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
    // associate the position array with the vertex array object
    glBindBuffer(GL_ARRAY_BUFFER, geometry->vertexBuffer);
-   glVertexAttribPointer(VERTEX_INDEX, 2, GL_FLOAT, GL_FALSE, 0, 0);
+   glVertexAttribPointer(VERTEX_INDEX, 3, GL_FLOAT, GL_FALSE, 0, 0);
    glEnableVertexAttribArray(VERTEX_INDEX);
 
    // assocaite the colour array with the vertex array object
@@ -248,13 +290,14 @@ void RenderScene(MyGeometry *geometry, MyShader *shader)
 {
    // clear screen to a dark grey colour
    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-   glClear(GL_COLOR_BUFFER_BIT);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    // bind our shader program and the vertex array object containing our
    // scene geometry, then tell OpenGL to draw our geometry
    glUseProgram(shader->program);
    glBindVertexArray(geometry->vertexArray);
-   glDrawArrays(GL_TRIANGLES, 0, geometry->elementCount);
+   glDrawElements(GL_TRIANGLES, geometry->elementCount, GL_UNSIGNED_INT, 0);
+   //glDrawArrays(GL_TRIANGLES, 0, geometry->elementCount);
 
    // reset state to default (no shader or geometry bound)
    glBindVertexArray(0);
@@ -299,7 +342,8 @@ int main(int argc, char *argv[])
    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-   window = glfwCreateWindow(512, 512, "CPSC 453 OpenGL Assignment 5", 0, 0);
+   int width = 512, height = 512;
+   window = glfwCreateWindow(width, height, "CPSC 453 OpenGL Assignment 5", 0, 0);
    if (!window) {
       cout << "Program failed to create GLFW window, TERMINATING" << endl;
       glfwTerminate();
@@ -332,9 +376,44 @@ int main(int argc, char *argv[])
    if (!InitializeGeometry(&geometry))
       cout << "Program failed to intialize geometry!" << endl;
 
+   // Enable Depth Testing
+   glEnable(GL_DEPTH_TEST);
+
+   // Get uniform Location
+   glUseProgram(shader.program);
+   GLint modelUniform = glGetUniformLocation(shader.program, "model");
+   GLint viewUniform = glGetUniformLocation(shader.program, "view");
+   GLint projUniform = glGetUniformLocation(shader.program, "proj");
+
+   mat4  I(1);
+
+   float angle = 45;
+
+   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
    // run an event-triggered main loop
    while (!glfwWindowShouldClose(window))
    {
+      glUseProgram(shader.program);
+      //angle += 0.01f;
+
+      // make a projection matrix
+      float fov = 1.0472f, aspectRatio = float(width) / float(height), zNear = .1f, zFar = 1000.f;
+      mat4 proj = perspective(fov, aspectRatio, zNear, zFar);
+
+      // make a view matrix
+      vec3 cameraLoc(0, 1, 4), cameraDir(0, 0, -1), cameraUp(0, 1, 0);
+      mat4 view = lookAt(cameraLoc, cameraLoc + cameraDir, cameraUp);
+
+      // Make a model matrix
+      vec3 location(0, 0, 0), rotAxis(0, 1, 1), size(1, 1, 1);
+      mat4 model = translate(I, location) * rotate(I, angle, rotAxis) * scale(I, size);
+
+      // update uniforms
+      glUniformMatrix4fv(modelUniform, 1, false, value_ptr(model));
+      glUniformMatrix4fv(viewUniform, 1, false, value_ptr(view));
+      glUniformMatrix4fv(projUniform, 1, false, value_ptr(proj));
+
       // call function to draw our scene
       RenderScene(&geometry, &shader);
 
