@@ -19,6 +19,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <cstdlib>
+#include <ctime>
+#include "camera.h"
 
 // Specify that we want the OpenGL core profile before including GLFW headers
 #ifdef _WIN32
@@ -49,6 +52,10 @@ bool CheckGLErrors();
 string LoadSource(const string &filename);
 GLuint CompileShader(GLenum shaderType, const string &source);
 GLuint LinkProgram(GLuint vertexShader, GLuint fragmentShader);
+
+vec2 mousePos_;
+Camera cam_;
+bool mousePressed_ = false;
 
 // --------------------------------------------------------------------------
 // Functions to set up OpenGL shader programs for rendering
@@ -331,8 +338,65 @@ void ErrorCallback(int error, const char* description)
 // handles keyboard input events
 void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+   float move = 0.05f;
+
    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
       glfwSetWindowShouldClose(window, GL_TRUE);
+   else if (key == GLFW_KEY_W)
+   {
+      cam_.pos += cam_.dir * move;
+   }
+   else if (key == GLFW_KEY_S)
+   {
+      cam_.pos -= cam_.dir * move;
+   }
+   else if (key == GLFW_KEY_D)
+   {
+      cam_.pos += cam_.right  * move;
+   }
+   else if (key == GLFW_KEY_A)
+   {
+      cam_.pos -= cam_.right * move;
+   }
+   else if (key == GLFW_KEY_E)
+   {
+      cam_.pos += cam_.up * move;
+   }
+   else if (key == GLFW_KEY_Q)
+   {
+      cam_.pos -= cam_.up * move;
+   }
+}
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+   if ((action == GLFW_PRESS) || (action == GLFW_RELEASE))
+   {
+      mousePressed_ = !mousePressed_;
+   }
+}
+
+void mousePosCallback(GLFWwindow* window, double xpos, double ypos)
+{
+   int vp[4];
+   glGetIntegerv(GL_VIEWPORT, vp);
+
+   vec2 newPos = vec2(xpos / (double)vp[2], -ypos / (double)vp[3]) *2.f - vec2(1.f);
+   vec2 diff = newPos - mousePos_;
+
+   if (mousePressed_)
+   {
+      cam_.cameraRotation(-diff.x, diff.y);
+   }
+   mousePos_ = newPos;
+
+}
+
+// Triggered whenever the window is resized
+void resizeCallback(GLFWwindow* window, int width, int height)
+{
+   // Adjust Viewport size
+   glViewport(0, 0, width, height);
 }
 
 // ==========================================================================
@@ -363,6 +427,9 @@ int main(int argc, char *argv[])
 
    // set keyboard callback function and make our context current (active)
    glfwSetKeyCallback(window, KeyCallback);
+   glfwSetMouseButtonCallback(window, mouseButtonCallback);
+   glfwSetCursorPosCallback(window, mousePosCallback);
+   glfwSetWindowSizeCallback(window, resizeCallback);
    glfwMakeContextCurrent(window);
 
    //Intialize GLAD
@@ -397,7 +464,7 @@ int main(int argc, char *argv[])
    GLint projUniform = glGetUniformLocation(shader.program, "proj");
 
    mat4  I(1);
-
+   cam_ = Camera(vec3(0, -1, -1), vec3(0, 1.f, 0));
    float angle = 60.0f;
 
    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -412,8 +479,7 @@ int main(int argc, char *argv[])
       mat4 proj = perspective(fov, aspectRatio, zNear, zFar);
 
       // make a view matrix
-      vec3 cameraLoc(0, 1, 4), cameraDir(0, 0, -1), cameraUp(0, 1, 0);
-      mat4 view = lookAt(cameraLoc, cameraLoc + cameraDir, cameraUp);
+      mat4 view = lookAt(cam_.pos, cam_.pos + cam_.dir, cam_.up);
 
       // Make a model matrix
       vec3 location(0, 0, 0), rotAxis(0, 1, 1), size(1, 1, 1);
