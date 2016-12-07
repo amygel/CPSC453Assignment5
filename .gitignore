@@ -1,3 +1,15 @@
+*sdf*
+*.tlog
+*.user
+*.lastbuildstate
+*.log
+*.idb
+*.pdb
+*.suo
+*unsuccessfulbuild*
+*.ilk
+*.png
+
 # Compiled Object files
 *.slo
 *.lo
