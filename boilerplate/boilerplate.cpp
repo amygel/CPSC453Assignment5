@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <string>
 #include <iterator>
+#include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -169,101 +170,113 @@ struct MyGeometry
    // OpenGL names for array buffer objects, vertex array object
    GLuint  vertexBuffer;
    GLuint  textureBuffer;
-   GLuint  colourBuffer;
    GLuint  elementBuffer;
+   GLuint  normalBuffer;
    GLuint  vertexArray;
    GLsizei elementCount;
 
    // initialize object names to zero (OpenGL reserved value)
-   MyGeometry() : vertexBuffer(0), colourBuffer(0), elementBuffer(0), vertexArray(0), elementCount(0)
+   MyGeometry() : vertexBuffer(0), elementBuffer(0), normalBuffer(0), vertexArray(0), elementCount(0)
    {}
 };
+
+void generateSphere(vector<vec3>& points, vector<vec3>& normals,
+   vector<unsigned int>& indices,
+   float c_r, float t_r, int uDivisions, int vDivisions)
+{
+   float uStep = 1.f / (float)(uDivisions - 1);
+   float vStep = 1.f / (float)(vDivisions - 1);
+
+   float u = 0.f;
+   // Traversing u
+   for (int i = 0; i<uDivisions; i++)
+   {
+      vec3 center = vec3(c_r * cos(2.f* M_PI *u),
+         0.f,
+         c_r * sin(2.f * M_PI * u));
+      float v = 0.f;
+      // Traversing v
+      for (int j = 0; j<vDivisions; j++)
+      {
+         vec3 pos = vec3((c_r + t_r * cos(2.f*M_PI*v)) * cos(2.f*M_PI*u),
+            t_r * sin(2.f*M_PI*v),
+            (c_r + t_r * cos(2.f * M_PI * v)) * sin(2.f * M_PI * u)
+            );
+
+         vec3 normal = normalize(pos - center);
+
+         points.push_back(pos);
+         normals.push_back(normal);
+         v += vStep;
+      }
+
+      u += uStep;
+   }
+
+   for (int i = 0; i < uDivisions - 1; i++)
+   {
+      for (int j = 0; j< vDivisions - 1; j++)
+      {
+         unsigned int p00 = i*vDivisions + j;
+         unsigned int p01 = i*vDivisions + j + 1;
+         unsigned int p10 = (i + 1)* vDivisions + j;
+         unsigned int p11 = (i + 1) * vDivisions + j + 1;
+
+         indices.push_back(p00);
+         indices.push_back(p10);
+         indices.push_back(p01);
+
+         indices.push_back(p01);
+         indices.push_back(p10);
+         indices.push_back(p11);
+      }
+   }
+}
 
 // create buffers and fill with geometry data, returning true if successful
 bool InitializeGeometry(MyGeometry *geometry)
 {
-   // three vertex positions and assocated colours of a triangle
-   const GLfloat vertices[][3] = {
-      { -1.f, -1.f, 1.f },
-      { -1.f, 1.f, 1.f },
-      { 1.f, 1.f, 1.f },
-      { 1.f, -1.f, 1.f },
+   vector<vec3> points;
+   vector<vec3> normals;
+   vector<unsigned int> indices;
 
-      { -1.f, -1.f, -1.f },
-      { -1.f, 1.f, -1.f },
-      { 1.f, 1.f, -1.f },
-      { 1.f, -1.f, -1.f }
-   };
+   generateSphere(points, normals, indices, 0.5f, 0.25f, 100, 20);
 
-   const GLfloat colours[][3] = {
-      { 1.0f, 0.0f, 0.0f },
-      { 0.0f, 1.0f, 0.0f },
-      { 0.0f, 0.0f, 1.0f },
-      { 0.0f, 1.0f, 0.0f },
-
-      { 1.0f, 0.0f, 0.0f },
-      { 0.0f, 1.0f, 0.0f },
-      { 0.0f, 0.0f, 1.0f },
-      { 0.0f, 1.0f, 0.0f }
-   };
-
-   // Have all shapes have same orientation for program speed
-   const unsigned indices[][36] = // Cube Faces
-   {
-      0, 2, 1, // Front Face
-      0, 3, 2,
-
-      1, 6, 5, // Top
-      1, 2, 6,
-
-      3, 6, 2, // Right
-      3, 7, 6,
-
-      1, 4, 0, // Left
-      1, 5, 4,
-
-      0, 4, 7, // Bottom
-      0, 7, 3,
-
-      4, 6, 7, // Back
-      4, 5, 6
-   };
-
-   geometry->elementCount = 36;
+   geometry->elementCount = indices.size();
 
    // these vertex attribute indices correspond to those specified for the
    // input variables in the vertex shader
    const GLuint VERTEX_INDEX = 0;
-   const GLuint COLOUR_INDEX = 1;
+   const GLuint NORMAL_INDEX = 1;
 
    // create an array buffer object for storing our vertices
    glGenBuffers(1, &geometry->vertexBuffer);
    glBindBuffer(GL_ARRAY_BUFFER, geometry->vertexBuffer);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)*points.size(), points.data(), GL_STATIC_DRAW);
 
-   // create another one for storing our colours
-   glGenBuffers(1, &geometry->colourBuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, geometry->colourBuffer);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);
+   //Buffer the vertex normals
+   glGenBuffers(1, &geometry->normalBuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, geometry->normalBuffer);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)*normals.size(), normals.data(), GL_STATIC_DRAW);
 
    // create a vertex array object encapsulating all our vertex attributes
    glGenVertexArrays(1, &geometry->vertexArray);
    glBindVertexArray(geometry->vertexArray);
 
-   //==== make element array buffer
+   // make element array buffer
    glGenBuffers(1, &geometry->elementBuffer);
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometry->elementBuffer);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)*indices.size(), indices.data(), GL_STATIC_DRAW);
 
    // associate the position array with the vertex array object
    glBindBuffer(GL_ARRAY_BUFFER, geometry->vertexBuffer);
    glVertexAttribPointer(VERTEX_INDEX, 3, GL_FLOAT, GL_FALSE, 0, 0);
    glEnableVertexAttribArray(VERTEX_INDEX);
 
-   // assocaite the colour array with the vertex array object
-   glBindBuffer(GL_ARRAY_BUFFER, geometry->colourBuffer);
-   glVertexAttribPointer(COLOUR_INDEX, 3, GL_FLOAT, GL_FALSE, 0, 0);
-   glEnableVertexAttribArray(COLOUR_INDEX);
+   // Normal Buffer
+   glBindBuffer(GL_ARRAY_BUFFER, geometry->normalBuffer);
+   glVertexAttribPointer(NORMAL_INDEX, 3, GL_FLOAT, GL_FALSE, 0, 0);
+   glEnableVertexAttribArray(NORMAL_INDEX);
 
    // unbind our buffers, resetting to default state
    glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -280,7 +293,8 @@ void DestroyGeometry(MyGeometry *geometry)
    glBindVertexArray(0);
    glDeleteVertexArrays(1, &geometry->vertexArray);
    glDeleteBuffers(1, &geometry->vertexBuffer);
-   glDeleteBuffers(1, &geometry->colourBuffer);
+   glDeleteBuffers(1, &geometry->normalBuffer);
+   glDeleteBuffers(1, &geometry->elementBuffer);
 }
 
 // --------------------------------------------------------------------------
@@ -290,6 +304,7 @@ void RenderScene(MyGeometry *geometry, MyShader *shader)
 {
    // clear screen to a dark grey colour
    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+   glEnable(GL_DEPTH_TEST);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
    // bind our shader program and the vertex array object containing our
@@ -297,7 +312,6 @@ void RenderScene(MyGeometry *geometry, MyShader *shader)
    glUseProgram(shader->program);
    glBindVertexArray(geometry->vertexArray);
    glDrawElements(GL_TRIANGLES, geometry->elementCount, GL_UNSIGNED_INT, 0);
-   //glDrawArrays(GL_TRIANGLES, 0, geometry->elementCount);
 
    // reset state to default (no shader or geometry bound)
    glBindVertexArray(0);
@@ -395,7 +409,6 @@ int main(int argc, char *argv[])
    while (!glfwWindowShouldClose(window))
    {
       glUseProgram(shader.program);
-      //angle += 0.01f;
 
       // make a projection matrix
       float fov = 1.0472f, aspectRatio = float(width) / float(height), zNear = .1f, zFar = 1000.f;
