@@ -304,17 +304,23 @@ void DestroyGeometry(MyGeometry *geometry)
 // --------------------------------------------------------------------------
 // Rendering function that draws our scene to the frame buffer
 
-void RenderScene(MyGeometry *geometry, MyShader *shader)
+void RenderScene(MyGeometry *geometry, MyShader *shader, mat4 proj, mat4 view, mat4 model)
 {
-   // clear screen to a dark grey colour
-   glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-   glEnable(GL_DEPTH_TEST);
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   // bind our shader program and the vertex array object containing our
-   // scene geometry, then tell OpenGL to draw our geometry
+   // bind our shader program and the vertex array object
    glUseProgram(shader->program);
    glBindVertexArray(geometry->vertexArray);
+
+   // Get uniforms
+   glUseProgram(shader->program);
+   GLint modelUniform = glGetUniformLocation(shader->program, "model");
+   GLint viewUniform = glGetUniformLocation(shader->program, "view");
+   GLint projUniform = glGetUniformLocation(shader->program, "proj");
+
+   glUniformMatrix4fv(modelUniform, 1, false, value_ptr(model));
+   glUniformMatrix4fv(viewUniform, 1, false, value_ptr(view));
+   glUniformMatrix4fv(projUniform, 1, false, value_ptr(proj));
+
+   // tell OpenGL to draw our geometry
    glDrawElements(GL_TRIANGLES, geometry->elementCount, GL_UNSIGNED_INT, 0);
 
    // reset state to default (no shader or geometry bound)
@@ -393,11 +399,10 @@ int main(int argc, char *argv[])
    // attempt to create a window with an OpenGL 4.1 core profile context
    GLFWwindow *window = 0;
    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-   int width = 512, height = 512;
-   window = glfwCreateWindow(width, height, "CPSC 453 OpenGL Assignment 5", 0, 0);
+   window = glfwCreateWindow(512.0f, 512.0f, "CPSC 453 OpenGL Assignment 5", 0, 0);
    if (!window) {
       cout << "Program failed to create GLFW window, TERMINATING" << endl;
       glfwTerminate();
@@ -430,45 +435,41 @@ int main(int argc, char *argv[])
    // call function to create and fill buffers with geometry data
    MyGeometry geometry;
    if (!InitializeGeometry(&geometry))
-      cout << "Program failed to intialize geometry!" << endl;
+      cout << "Program failed to intialize geometry!" << endl;   
 
    // Enable Depth Testing
    glEnable(GL_DEPTH_TEST);
 
-   // Get uniform Location
-   glUseProgram(shader.program);
-   GLint modelUniform = glGetUniformLocation(shader.program, "model");
-   GLint viewUniform = glGetUniformLocation(shader.program, "view");
-   GLint projUniform = glGetUniformLocation(shader.program, "proj");
-
    mat4  I(1);
-   cam_ = Camera(vec3(0, -1, -1), vec3(0, 1.f, 0));
+   cam_ = Camera(vec3(0, -1, -1), vec3(0, 5.f, 0));
+
+   // make a projection matrix   
+   mat4 proj = perspective(radians(80.0f), 1.0f, 0.1f, 1000.0f);
 
    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+   // Setup Models
+   mat4 sunModel = translate(I, vec3(0.0f));
+   mat4 earthModel = translate(sunModel, vec3(3.0f, 0.0f, 0.0f)) * scale(I, vec3(0.65f, 0.65f, 0.65f));
 
    // run an event-triggered main loop
    while (!glfwWindowShouldClose(window))
    {
-      glUseProgram(shader.program);
+      // clear screen to a dark grey colour
+      glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+      glEnable(GL_DEPTH_TEST);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      // make a projection matrix
-      float fov = 1.0472f, aspectRatio = float(width) / float(height), zNear = .1f, zFar = 1000.f;
-      mat4 proj = perspective(fov, aspectRatio, zNear, zFar);
+      glUseProgram(shader.program);
 
       // make a view matrix
       mat4 view = cam_.getMatrix();
 
-      // Make a model matrix
-      vec3 location(0, 0, 0), size(1, 1, 1);
-      mat4 model = translate(I, location) * scale(I, size);
+      // Sun 
+      RenderScene(&geometry, &shader, proj, view, sunModel);
 
-      // update uniforms
-      glUniformMatrix4fv(modelUniform, 1, false, value_ptr(model));
-      glUniformMatrix4fv(viewUniform, 1, false, value_ptr(view));
-      glUniformMatrix4fv(projUniform, 1, false, value_ptr(proj));
-
-      // call function to draw our scene
-      RenderScene(&geometry, &shader);
+      // Earth
+      RenderScene(&geometry, &shader, proj, view, earthModel);
 
       glfwSwapBuffers(window);
       glfwPollEvents();
