@@ -37,7 +37,11 @@ void Camera::cameraRotation(float x, float y)
 	mat4 rotateAroundY = rotateAbout(vec3(0,1,0), x);
 	mat4 rotateAroundX = rotateAbout(right, y);
 
-	dir = normalize(rotateAroundX * rotateAroundY * vec4(dir,0));
+	dir = normalize(
+		// 0 treats as a vector and is not translated
+		rotateAroundX * rotateAroundY * vec4(dir,0) 
+		);
+	// Make sure we don't lose our orthagonality
 	right = normalize(cross(dir, vec3(0, 1, 0)));
 	up =  normalize(cross(right, dir));
 

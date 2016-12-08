@@ -341,16 +341,30 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
    float move = 0.05f;
 
    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-   {
       glfwSetWindowShouldClose(window, GL_TRUE);
-   }
-   else if (key == GLFW_KEY_UP)
+   else if (key == GLFW_KEY_W)
    {
       cam_.pos += cam_.dir * move;
    }
-   else if (key == GLFW_KEY_DOWN)
+   else if (key == GLFW_KEY_S)
    {
       cam_.pos -= cam_.dir * move;
+   }
+   else if (key == GLFW_KEY_D)
+   {
+      cam_.pos += cam_.right  * move;
+   }
+   else if (key == GLFW_KEY_A)
+   {
+      cam_.pos -= cam_.right * move;
+   }
+   else if (key == GLFW_KEY_E)
+   {
+      cam_.pos += cam_.up * move;
+   }
+   else if (key == GLFW_KEY_Q)
+   {
+      cam_.pos -= cam_.up * move;
    }
 }
 
@@ -376,6 +390,13 @@ void mousePosCallback(GLFWwindow* window, double xpos, double ypos)
    }
    mousePos_ = newPos;
 
+}
+
+// Triggered whenever the window is resized
+void resizeCallback(GLFWwindow* window, int width, int height)
+{
+   // Adjust Viewport size
+   glViewport(0, 0, width, height);
 }
 
 // ==========================================================================
@@ -408,6 +429,7 @@ int main(int argc, char *argv[])
    glfwSetKeyCallback(window, KeyCallback);
    glfwSetMouseButtonCallback(window, mouseButtonCallback);
    glfwSetCursorPosCallback(window, mousePosCallback);
+   glfwSetWindowSizeCallback(window, resizeCallback);
    glfwMakeContextCurrent(window);
 
    //Intialize GLAD
@@ -457,7 +479,7 @@ int main(int argc, char *argv[])
       mat4 proj = perspective(fov, aspectRatio, zNear, zFar);
 
       // make a view matrix
-      mat4 view = lookAt(cam_.pos, vec3(0.0f), cam_.up);
+      mat4 view = lookAt(cam_.pos, cam_.pos + cam_.dir, cam_.up);
 
       // Make a model matrix
       vec3 location(0, 0, 0), rotAxis(0, 1, 1), size(1, 1, 1);
