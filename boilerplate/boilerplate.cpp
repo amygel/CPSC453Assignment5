@@ -344,44 +344,37 @@ void ErrorCallback(int error, const char* description)
 // handles keyboard input events
 void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-   float move = 0.05f;
+   float move = 0.1f;
+   float angle = 5.0f;
 
    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
    {
       glfwSetWindowShouldClose(window, GL_TRUE);
    }
-   else if (key == GLFW_KEY_UP)
-   {
-      cam_.pos += cam_.dir * move;
-   }
-   else if (key == GLFW_KEY_DOWN)
+   else if (key == GLFW_KEY_E)
    {
       cam_.pos -= cam_.dir * move;
    }
-}
-
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-   if ((action == GLFW_PRESS) || (action == GLFW_RELEASE))
+   else if (key == GLFW_KEY_Q)
    {
-      mousePressed_ = !mousePressed_;
+      cam_.pos += cam_.dir * move;
    }
-}
-
-void mousePosCallback(GLFWwindow* window, double xpos, double ypos)
-{
-   int vp[4];
-   glGetIntegerv(GL_VIEWPORT, vp);
-
-   vec2 newPos = vec2(xpos / (double)vp[2], -ypos / (double)vp[3]) *2.f - vec2(1.f);
-   vec2 diff = newPos - mousePos_;
-
-   if (mousePressed_)
+   else if (key == GLFW_KEY_D)
    {
-      cam_.cameraRotation(-diff.x, diff.y);
+      cam_.cameraRotation(radians(angle), 0.0f);
    }
-   mousePos_ = newPos;
-
+   else if (key == GLFW_KEY_A)
+   {
+      cam_.cameraRotation(-radians(angle), 0.0f);
+   }
+   else if (key == GLFW_KEY_W)
+   {
+      cam_.cameraRotation(0.0f, radians(angle));
+   }
+   else if (key == GLFW_KEY_S)
+   {
+      cam_.cameraRotation(0.0f, -radians(angle));
+   }
 }
 
 // ==========================================================================
@@ -399,10 +392,10 @@ int main(int argc, char *argv[])
    // attempt to create a window with an OpenGL 4.1 core profile context
    GLFWwindow *window = 0;
    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-   window = glfwCreateWindow(512.0f, 512.0f, "CPSC 453 OpenGL Assignment 5", 0, 0);
+   window = glfwCreateWindow(512, 512, "CPSC 453 OpenGL Assignment 5", 0, 0);
    if (!window) {
       cout << "Program failed to create GLFW window, TERMINATING" << endl;
       glfwTerminate();
@@ -411,8 +404,6 @@ int main(int argc, char *argv[])
 
    // set keyboard callback function and make our context current (active)
    glfwSetKeyCallback(window, KeyCallback);
-   glfwSetMouseButtonCallback(window, mouseButtonCallback);
-   glfwSetCursorPosCallback(window, mousePosCallback);
    glfwMakeContextCurrent(window);
 
    //Intialize GLAD
@@ -441,7 +432,7 @@ int main(int argc, char *argv[])
    glEnable(GL_DEPTH_TEST);
 
    mat4  I(1);
-   cam_ = Camera(vec3(0, -1, -1), vec3(0, 5.f, 0));
+   cam_ = Camera(vec3(0.f, -1.f, -1.f), vec3(0.f, -5.f, -5.f));
 
    // make a projection matrix   
    mat4 proj = perspective(radians(80.0f), 1.0f, 0.1f, 1000.0f);
@@ -463,7 +454,7 @@ int main(int argc, char *argv[])
       glUseProgram(shader.program);
 
       // make a view matrix
-      mat4 view = cam_.getMatrix();
+      mat4 view = cam_.getViewMatrix();
 
       // Sun 
       RenderScene(&geometry, &shader, proj, view, sunModel);

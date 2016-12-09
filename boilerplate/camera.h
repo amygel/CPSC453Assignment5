@@ -14,8 +14,8 @@ public:
 	Camera();
 	Camera(vec3 dir, vec3 pos);
 
-	mat4 getMatrix();
-	void cameraRotation(float x, float y); 
+   mat4 getViewMatrix();
+   void cameraRotation(float x, float y);
 
 private:
    mat4 rotateAbout(vec3 axis, float radians);
