@@ -393,6 +393,19 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
    }
 }
 
+void timeStep(double& lastTime, double& accumulator)
+{
+   double now = glfwGetTime();
+   double delta = now - lastTime;
+   lastTime = now;
+   accumulator += delta;
+
+   while (accumulator >= (1. / 60.))
+   {
+      accumulator -= (1. / 60.);
+   }
+}
+
 // ==========================================================================
 // PROGRAM ENTRY POINT
 
@@ -457,16 +470,21 @@ int main(int argc, char *argv[])
    // Enable Depth Testing
    glEnable(GL_DEPTH_TEST);
 
+   // Setup Camera
    mat4  I(1.0f);
    cam_ = Camera(vec3(0.f, 1.f, -1.f), vec3(0.f, 10.f, -10.f));
 
    // make a projection matrix   
    mat4 proj = perspective(radians(80.0f), 1.0f, 0.1f, 1000.0f);
-   
-   // Setup Models
-   mat4 sunModel = translate(I, vec3(0.0f));
-   mat4 earthModel = translate(sunModel, vec3(6.0f, 0.0f, 0.0f)) * scale(sunModel, vec3(0.65f, 0.65f, 0.65f));
-   mat4 moonModel = translate(sunModel, vec3(2.0f, 0.0f, 0.0f)) * scale(earthModel, vec3(0.65f, 0.65f, 0.65f));
+
+   // Timing variables
+   double lastTime = 0.0;
+   double accumulator = 0.0;
+
+   // Angles
+   float sunAngle = 0.f;
+   float earthAngle = 0.f;
+   float moonAngle = 0.f;
 
    // run an event-triggered main loop
    while (!glfwWindowShouldClose(window))
@@ -481,6 +499,18 @@ int main(int argc, char *argv[])
       // make a view matrix
       mat4 view = cam_.getViewMatrix();
 
+      // Setup Models  
+      earthAngle += 0.02f;
+      moonAngle += 0.22f;
+      mat4 sunModel = translate(I, vec3(0.0f));
+      mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) * 
+         translate(sunModel, vec3(0.0f, 0.0f, 0.0f)) * 
+         rotate(I, earthAngle, vec3(0, 1, 0)) * 
+         translate(sunModel, vec3(10.0f, 0.0f, 0.0f));
+      mat4 moonModel = scale(earthModel, vec3(0.5f, 0.5f, 0.5f)) * 
+         rotate(I, moonAngle, vec3(0, 1, 0)) * 
+         translate(earthModel, vec3(0.0f, 0.0f, 0.0f));
+
       // Sun 
       RenderScene(&geometry, &shader, &sunTexture, proj, view, sunModel);
 
@@ -489,6 +519,9 @@ int main(int argc, char *argv[])
 
       // Moon
       RenderScene(&geometry, &shader, &moonTexture, proj, view, moonModel);
+
+      // Timing
+      timeStep(lastTime, accumulator);
 
       glfwSwapBuffers(window);
       glfwPollEvents();
