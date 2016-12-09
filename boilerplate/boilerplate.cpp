@@ -186,7 +186,7 @@ struct MyGeometry
    {}
 };
 
-void generateSphere(vector<vec3>& points, vector<vec3>& normals, vector<vec2>& uvs,
+void generateSphere(vector<vec3>& points, vector<vec3>& normals,
    vector<unsigned int>& indices, float r, int uDivisions, int vDivisions)
 {
    float uStep = 1.f / (float)(uDivisions - 1);
@@ -210,7 +210,6 @@ void generateSphere(vector<vec3>& points, vector<vec3>& normals, vector<vec2>& u
 
          points.push_back(pos);
          normals.push_back(normal);
-         uvs.push_back(vec2(u, v));
          v += vStep;
       }
 
@@ -242,10 +241,9 @@ bool InitializeGeometry(MyGeometry *geometry)
 {
    vector<vec3> points;
    vector<vec3> normals;
-   vector<vec2> uvs;
    vector<unsigned int> indices;
 
-   generateSphere(points, normals, uvs, indices, 1.0f, 200, 100);
+   generateSphere(points, normals, indices, 1.0f, 200, 100);
 
    geometry->elementCount = indices.size();
 
@@ -253,7 +251,6 @@ bool InitializeGeometry(MyGeometry *geometry)
    // input variables in the vertex shader
    const GLuint VERTEX_INDEX = 0;
    const GLuint NORMAL_INDEX = 1;
-   const GLuint TEXTURE_INDEX = 2;
 
    // create an array buffer object for storing our vertices
    glGenBuffers(1, &geometry->vertexBuffer);
@@ -264,11 +261,6 @@ bool InitializeGeometry(MyGeometry *geometry)
    glGenBuffers(1, &geometry->normalBuffer);
    glBindBuffer(GL_ARRAY_BUFFER, geometry->normalBuffer);
    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)*normals.size(), normals.data(), GL_STATIC_DRAW);
-
-   //Buffer the texture coordinates
-   glGenBuffers(1, &geometry->textureBuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, geometry->textureBuffer);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*uvs.size(), uvs.data(), GL_STATIC_DRAW);
 
    // create a vertex array object encapsulating all our vertex attributes
    glGenVertexArrays(1, &geometry->vertexArray);
@@ -288,11 +280,6 @@ bool InitializeGeometry(MyGeometry *geometry)
    glBindBuffer(GL_ARRAY_BUFFER, geometry->normalBuffer);
    glVertexAttribPointer(NORMAL_INDEX, 3, GL_FLOAT, GL_FALSE, 0, 0);
    glEnableVertexAttribArray(NORMAL_INDEX);
-
-   // Texture Buffer
-   glBindBuffer(GL_ARRAY_BUFFER, geometry->textureBuffer);
-   glVertexAttribPointer(TEXTURE_INDEX, 2, GL_FLOAT, GL_FALSE, 0, 0);
-   glEnableVertexAttribArray(TEXTURE_INDEX);
 
    // unbind our buffers, resetting to default state
    glBindBuffer(GL_ARRAY_BUFFER, 0);
