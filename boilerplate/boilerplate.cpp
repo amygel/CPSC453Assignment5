@@ -461,11 +461,13 @@ int main(int argc, char *argv[])
 
    // Load textures
    MyTexture sunTexture;
-   InitializeTexture(&sunTexture, "planetTextures/texture_sun.jpg");
+   InitializeTexture(&sunTexture, "textures/texture_sun.jpg");
    MyTexture earthTexture;
-   InitializeTexture(&earthTexture, "planetTextures/texture_earth_surface.jpg");
+   InitializeTexture(&earthTexture, "textures/texture_earth_surface.jpg");
    MyTexture moonTexture;
-   InitializeTexture(&moonTexture, "planetTextures/texture_moon.jpg");
+   InitializeTexture(&moonTexture, "textures/texture_moon.jpg");
+   MyTexture galaxyTexture;
+   InitializeTexture(&galaxyTexture, "textures/stars_milkyway.jpg");
 
    // Enable Depth Testing
    glEnable(GL_DEPTH_TEST);
@@ -510,6 +512,8 @@ int main(int argc, char *argv[])
       mat4 moonModel = scale(earthModel, vec3(0.5f, 0.5f, 0.5f)) * 
          rotate(I, moonAngle, vec3(0, 1, 0)) * 
          translate(earthModel, vec3(0.0f, 0.0f, 0.0f));
+      mat4 galaxyModel = translate(I, vec3(0.0f)) *
+         scale(I, vec3(50.f, 50.f, 50.f));
 
       // Sun 
       RenderScene(&geometry, &shader, &sunTexture, proj, view, sunModel);
@@ -519,6 +523,9 @@ int main(int argc, char *argv[])
 
       // Moon
       RenderScene(&geometry, &shader, &moonTexture, proj, view, moonModel);
+
+      // Galaxy
+      RenderScene(&geometry, &shader, &galaxyTexture, proj, view, galaxyModel);
 
       // Timing
       timeStep(lastTime, accumulator);
