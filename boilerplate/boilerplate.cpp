@@ -432,16 +432,17 @@ int main(int argc, char *argv[])
    glEnable(GL_DEPTH_TEST);
 
    mat4  I(1);
-   cam_ = Camera(vec3(0.f, -1.f, -1.f), vec3(0.f, -5.f, -5.f));
+   cam_ = Camera(vec3(0.f, 1.f, -1.f), vec3(0.f, 10.f, -10.f));
 
    // make a projection matrix   
    mat4 proj = perspective(radians(80.0f), 1.0f, 0.1f, 1000.0f);
 
    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
+   
    // Setup Models
    mat4 sunModel = translate(I, vec3(0.0f));
-   mat4 earthModel = translate(sunModel, vec3(3.0f, 0.0f, 0.0f)) * scale(I, vec3(0.65f, 0.65f, 0.65f));
+   mat4 earthModel = translate(sunModel, vec3(6.0f, 0.0f, 0.0f)) * scale(sunModel, vec3(0.65f, 0.65f, 0.65f));
+   mat4 moonModel = translate(sunModel, vec3(2.0f, 0.0f, 0.0f)) * scale(earthModel, vec3(0.65f, 0.65f, 0.65f));
 
    // run an event-triggered main loop
    while (!glfwWindowShouldClose(window))
@@ -461,6 +462,9 @@ int main(int argc, char *argv[])
 
       // Earth
       RenderScene(&geometry, &shader, proj, view, earthModel);
+
+      // Moon
+      RenderScene(&geometry, &shader, proj, view, moonModel);
 
       glfwSwapBuffers(window);
       glfwPollEvents();
