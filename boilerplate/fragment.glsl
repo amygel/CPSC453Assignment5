@@ -18,5 +18,5 @@ uniform sampler2D tex;
 void main(void)
 {
     // write colour output without modification
-    FragmentColour = texture(tex, normalize(TextureCoord));
+    FragmentColour = texture(tex, TextureCoord);
 }

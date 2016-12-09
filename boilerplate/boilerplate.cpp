@@ -490,6 +490,8 @@ int main(int argc, char *argv[])
    float sunAngle = 0.f;
    float earthAngle = 0.f;
    float moonAngle = 0.f;
+   float earthOrbit = 0.f;
+   float moonOrbit = 0.f;
 
    // run an event-triggered main loop
    while (!glfwWindowShouldClose(window))
@@ -507,19 +509,24 @@ int main(int argc, char *argv[])
       
       if (!isPaused_)
       {
-         earthAngle += 0.02f;
+         sunAngle += 0.24f;
+         earthAngle += 6.f;
          moonAngle += 0.22f;
+         earthOrbit -= 0.7f;
+         moonOrbit += 0.52f;
       }
 
       // Setup Models  
-      mat4 sunModel = translate(I, vec3(0.0f));
+      mat4 sunModel = translate(I, vec3(0.0f)) * rotate(I, sunAngle, vec3(0, 1, 0));
       mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) *
-         translate(sunModel, vec3(0.0f, 0.0f, 0.0f)) *
-         rotate(I, earthAngle, vec3(0, 1, 0)) *
-         translate(sunModel, vec3(10.0f, 0.0f, 0.0f));
+         translate(sunModel, vec3(0.0f, 0.0f, 0.0f)) *  
+         rotate(I, earthOrbit, vec3(0, 1, 0)) *
+         translate(sunModel, vec3(10.0f, 0.0f, 0.0f)) *
+         rotate(I, earthAngle, vec3(0, 1, 0));
       mat4 moonModel = scale(earthModel, vec3(0.5f, 0.5f, 0.5f)) *
-         rotate(I, moonAngle, vec3(0, 1, 0)) *
-         translate(earthModel, vec3(0.0f, 0.0f, 0.0f));
+         rotate(I, moonOrbit, vec3(0, 1, 0)) *
+         translate(earthModel, vec3(0.0f, 0.0f, 0.0f)) *
+         rotate(I, moonAngle, vec3(0, 1, 0));
       mat4 galaxyModel = translate(I, vec3(0.0f)) *
          scale(I, vec3(50.f, 50.f, 50.f));
 
