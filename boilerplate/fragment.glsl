@@ -6,12 +6,17 @@
 // ==========================================================================
 #version 410
 
+// interpolated colour received from vertex stage
+in vec2 TextureCoord;
+in vec3 Normal;
+
 // first output is mapped to the framebuffer's colour index by default
 out vec4 FragmentColour;
 
-in vec3 FragNormal;
+uniform sampler2D tex;
 
 void main(void)
 {
-	FragmentColour = vec4(normalize(FragNormal), 1);
+    // write colour output without modification
+    FragmentColour = texture(tex, normalize(TextureCoord));
 }

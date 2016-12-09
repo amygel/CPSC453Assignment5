@@ -187,34 +187,35 @@ struct MyGeometry
    {}
 };
 
-void generateSphere(vector<vec3>& points, vector<vec3>& normals,
+void generateSphere(vector<vec3>& points, vector<vec3>& normals, vector<vec2>& uvs,
    vector<unsigned int>& indices, float r, int uDivisions, int vDivisions)
 {
-   float uStep = 360.0f / static_cast<float>(uDivisions);
-   float vStep = 360.0f / static_cast<float>(vDivisions);
+   float uStep = 1.f / (float)(uDivisions - 1);
+   float vStep = 1.f / (float)(vDivisions - 1);
 
    float u = 0.f;
-   float v = 0.f;
    vec3 center = vec3(0.0f);
 
    // Traversing u
    for (int i = 0; i < uDivisions; i++)
    {
       // Traversing v
+      float v = 0.f;
       for (int j = 0; j < vDivisions; j++)
       {
-         vec3 pos = vec3(r * sin(u) * cos(v),
-            r * cos(u) * cos(v),
-            r * sin(v));
+         vec3 pos = vec3(r * sin(2.0f * M_PI * u) * cos(2.0f * M_PI * v),
+            r * cos(2.0f * M_PI * u) * cos(2.0f * M_PI * v),
+            r * sin(2.0f * M_PI * v));
 
          vec3 normal = normalize(pos - center);
 
          points.push_back(pos);
          normals.push_back(normal);
-         v += radians(vStep);
+         uvs.push_back(vec2(u, v));
+         v += vStep;
       }
 
-      u += radians(uStep);
+      u += uStep;
    }
  
    for (int i = 0; i < uDivisions - 1; i++)
@@ -242,9 +243,10 @@ bool InitializeGeometry(MyGeometry *geometry)
 {
    vector<vec3> points;
    vector<vec3> normals;
+   vector<vec2> uvs;
    vector<unsigned int> indices;
 
-   generateSphere(points, normals, indices, 1.0f, 48, 24);
+   generateSphere(points, normals, uvs, indices, 1.0f, 200, 100);
 
    geometry->elementCount = indices.size();
 
@@ -252,6 +254,7 @@ bool InitializeGeometry(MyGeometry *geometry)
    // input variables in the vertex shader
    const GLuint VERTEX_INDEX = 0;
    const GLuint NORMAL_INDEX = 1;
+   const GLuint TEXTURE_INDEX = 2;
 
    // create an array buffer object for storing our vertices
    glGenBuffers(1, &geometry->vertexBuffer);
@@ -262,6 +265,11 @@ bool InitializeGeometry(MyGeometry *geometry)
    glGenBuffers(1, &geometry->normalBuffer);
    glBindBuffer(GL_ARRAY_BUFFER, geometry->normalBuffer);
    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3)*normals.size(), normals.data(), GL_STATIC_DRAW);
+
+   //Buffer the texture coordinates
+   glGenBuffers(1, &geometry->textureBuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, geometry->textureBuffer);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*uvs.size(), uvs.data(), GL_STATIC_DRAW);
 
    // create a vertex array object encapsulating all our vertex attributes
    glGenVertexArrays(1, &geometry->vertexArray);
@@ -282,6 +290,11 @@ bool InitializeGeometry(MyGeometry *geometry)
    glVertexAttribPointer(NORMAL_INDEX, 3, GL_FLOAT, GL_FALSE, 0, 0);
    glEnableVertexAttribArray(NORMAL_INDEX);
 
+   // Texture Buffer
+   glBindBuffer(GL_ARRAY_BUFFER, geometry->textureBuffer);
+   glVertexAttribPointer(TEXTURE_INDEX, 2, GL_FLOAT, GL_FALSE, 0, 0);
+   glEnableVertexAttribArray(TEXTURE_INDEX);
+
    // unbind our buffers, resetting to default state
    glBindBuffer(GL_ARRAY_BUFFER, 0);
    glBindVertexArray(0);
@@ -299,14 +312,16 @@ void DestroyGeometry(MyGeometry *geometry)
    glDeleteBuffers(1, &geometry->vertexBuffer);
    glDeleteBuffers(1, &geometry->normalBuffer);
    glDeleteBuffers(1, &geometry->elementBuffer);
+   glDeleteBuffers(1, &geometry->textureBuffer);
 }
 
 // --------------------------------------------------------------------------
 // Rendering function that draws our scene to the frame buffer
 
-void RenderScene(MyGeometry *geometry, MyShader *shader, mat4 proj, mat4 view, mat4 model)
+void RenderScene(MyGeometry *geometry, MyShader *shader, MyTexture* texture, mat4 proj, mat4 view, mat4 model)
 {
    // bind our shader program and the vertex array object
+   glBindTexture(texture->target, texture->textureID);
    glUseProgram(shader->program);
    glBindVertexArray(geometry->vertexArray);
 
@@ -324,6 +339,7 @@ void RenderScene(MyGeometry *geometry, MyShader *shader, mat4 proj, mat4 view, m
    glDrawElements(GL_TRIANGLES, geometry->elementCount, GL_UNSIGNED_INT, 0);
 
    // reset state to default (no shader or geometry bound)
+   glBindTexture(texture->target, 0);
    glBindVertexArray(0);
    glUseProgram(0);
 
@@ -425,19 +441,27 @@ int main(int argc, char *argv[])
 
    // call function to create and fill buffers with geometry data
    MyGeometry geometry;
-   if (!InitializeGeometry(&geometry))
+   if (!InitializeGeometry(&geometry)) {
       cout << "Program failed to intialize geometry!" << endl;   
+      return -1;
+   }
+
+   // Load textures
+   MyTexture sunTexture;
+   InitializeTexture(&sunTexture, "planetTextures/texture_sun.jpg");
+   MyTexture earthTexture;
+   InitializeTexture(&earthTexture, "planetTextures/texture_earth_surface.jpg");
+   MyTexture moonTexture;
+   InitializeTexture(&moonTexture, "planetTextures/texture_moon.jpg");
 
    // Enable Depth Testing
    glEnable(GL_DEPTH_TEST);
 
-   mat4  I(1);
+   mat4  I(1.0f);
    cam_ = Camera(vec3(0.f, 1.f, -1.f), vec3(0.f, 10.f, -10.f));
 
    // make a projection matrix   
    mat4 proj = perspective(radians(80.0f), 1.0f, 0.1f, 1000.0f);
-
-   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
    
    // Setup Models
    mat4 sunModel = translate(I, vec3(0.0f));
@@ -458,13 +482,13 @@ int main(int argc, char *argv[])
       mat4 view = cam_.getViewMatrix();
 
       // Sun 
-      RenderScene(&geometry, &shader, proj, view, sunModel);
+      RenderScene(&geometry, &shader, &sunTexture, proj, view, sunModel);
 
       // Earth
-      RenderScene(&geometry, &shader, proj, view, earthModel);
+      RenderScene(&geometry, &shader, &earthTexture, proj, view, earthModel);
 
       // Moon
-      RenderScene(&geometry, &shader, proj, view, moonModel);
+      RenderScene(&geometry, &shader, &moonTexture, proj, view, moonModel);
 
       glfwSwapBuffers(window);
       glfwPollEvents();

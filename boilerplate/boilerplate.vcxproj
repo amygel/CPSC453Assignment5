@@ -90,6 +90,11 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="planetTextures\texture_earth_surface.jpg" />
+    <Image Include="planetTextures\texture_moon.jpg" />
+    <Image Include="planetTextures\texture_sun.jpg" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
