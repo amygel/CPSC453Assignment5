@@ -24,6 +24,5 @@ void main()
     // transformations applied right to left, order matters
     gl_Position = proj*view*model*vec4(VertexPosition, 1.0);
 
-    // assign output colour to be interpolated
-    Normal = normalize(model * vec4(VertexNormal, 0.f)).xyz;
+	Normal = normalize(VertexNormal);
 }

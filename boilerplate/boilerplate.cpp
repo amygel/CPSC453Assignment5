@@ -496,19 +496,18 @@ int main(int argc, char *argv[])
       
       if (!isPaused_)
       {
-         sunAngle += 0.24f;
-         earthAngle += 6.f;
-         moonAngle += 0.22f;
-         earthOrbit -= 0.7f;
-         moonOrbit += 0.52f;
+         sunAngle += radians(0.24f);
+         earthAngle += radians(0.1f);
+         moonAngle += radians(0.22f);
+         earthOrbit -= radians(0.22f);
+         moonOrbit += radians(0.2f);
       }
 
       // Setup Models  
       mat4 sunModel = translate(I, vec3(0.0f)) * rotate(I, sunAngle, vec3(0, 1, 0));
-      mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) *
-         translate(sunModel, vec3(0.0f, 0.0f, 0.0f)) *  
+      mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) * 
          rotate(I, earthOrbit, vec3(0, 1, 0)) *
-         translate(sunModel, vec3(10.0f, 0.0f, 0.0f)) *
+         translate(I, vec3(12.0f, 0.0f, 0.0f)) *
          rotate(I, earthAngle, vec3(0, 1, 0));
       mat4 moonModel = scale(earthModel, vec3(0.5f, 0.5f, 0.5f)) *
          rotate(I, moonOrbit, vec3(0, 1, 0)) *
