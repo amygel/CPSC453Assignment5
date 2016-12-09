@@ -53,9 +53,8 @@ string LoadSource(const string &filename);
 GLuint CompileShader(GLenum shaderType, const string &source);
 GLuint LinkProgram(GLuint vertexShader, GLuint fragmentShader);
 
-vec2 mousePos_;
 Camera cam_;
-bool mousePressed_ = false;
+bool isPaused_ = false;
 
 // --------------------------------------------------------------------------
 // Functions to set up OpenGL shader programs for rendering
@@ -391,6 +390,10 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
    {
       cam_.cameraRotation(0.0f, -radians(angle));
    }
+   else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+   {
+      isPaused_ = !isPaused_;
+   }
 }
 
 void timeStep(double& lastTime, double& accumulator)
@@ -501,16 +504,21 @@ int main(int argc, char *argv[])
       // make a view matrix
       mat4 view = cam_.getViewMatrix();
 
+      
+      if (!isPaused_)
+      {
+         earthAngle += 0.02f;
+         moonAngle += 0.22f;
+      }
+
       // Setup Models  
-      earthAngle += 0.02f;
-      moonAngle += 0.22f;
       mat4 sunModel = translate(I, vec3(0.0f));
-      mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) * 
-         translate(sunModel, vec3(0.0f, 0.0f, 0.0f)) * 
-         rotate(I, earthAngle, vec3(0, 1, 0)) * 
+      mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) *
+         translate(sunModel, vec3(0.0f, 0.0f, 0.0f)) *
+         rotate(I, earthAngle, vec3(0, 1, 0)) *
          translate(sunModel, vec3(10.0f, 0.0f, 0.0f));
-      mat4 moonModel = scale(earthModel, vec3(0.5f, 0.5f, 0.5f)) * 
-         rotate(I, moonAngle, vec3(0, 1, 0)) * 
+      mat4 moonModel = scale(earthModel, vec3(0.5f, 0.5f, 0.5f)) *
+         rotate(I, moonAngle, vec3(0, 1, 0)) *
          translate(earthModel, vec3(0.0f, 0.0f, 0.0f));
       mat4 galaxyModel = translate(I, vec3(0.0f)) *
          scale(I, vec3(50.f, 50.f, 50.f));
