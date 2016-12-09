@@ -27,10 +27,19 @@ void Camera::cameraRotation(float x, float y)
    mat4 rotateAroundY = rotateAbout(up, x);
    mat4 rotateAroundX = rotateAbout(right, y);
 
+   vec3 prevPos = pos;
    pos = rotateAroundX * rotateAroundY * vec4(pos, 0);
    dir = normalize(pos);
-   right = normalize(cross(dir, vec3(0, 1, 0)));
-   up = normalize(cross(right, dir));
+   if ((dir.y < -0.98f && y < 0.0f) || (dir.y > 0.98f && y > 0.0f))
+   {
+      pos = prevPos;
+      dir = normalize(pos);
+   }
+   else
+   {      
+      right = normalize(cross(dir, vec3(0, 1, 0)));
+      up = normalize(cross(right, dir));
+   }
 }
 
 mat4 Camera::rotateAbout(vec3 axis, float radians)
