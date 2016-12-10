@@ -1,5 +1,5 @@
 CPSC 453
-Assignment 4
+Assignment 5
 Amanda Gelowitz
 10097846
 
@@ -16,7 +16,7 @@ To Setup:
 4. Enjoy :)
 
 Keyboard Controls:
-Left/ Right Arrows: Cycle through the 3 scenes
-
-Note:
-Screenshots will be taken automatically the first time you view a scene.
+A/D Keys: Move camera horizontally
+W/S Keys: Move camera vertically
+Q/E Keys: Zoom in/out
+Space Bar: Pause Animation
