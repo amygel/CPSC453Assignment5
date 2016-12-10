@@ -512,9 +512,9 @@ int main(int argc, char *argv[])
 
       mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) *
          rotate(I, earthOrbit, vec3(0, 1, 0)) *
-         rotate(I, earthAngle, vec3(0, 1, 0)) *
          translate(I, vec3(12.0f, 0.0f, 0.0f)) *
-         rotate(I, earthAxis, vec3(1, 0, 0));
+         rotate(I, earthAxis, vec3(1, 0, 0)) *
+         rotate(I, earthAngle, vec3(0, 1, 0));
 
       vec4 earthUpVec = earthModel * vec4(0, 1, 0, 0);
       vec3 earthUp = vec3(earthUpVec.x, earthUpVec.y, earthUpVec.z);
