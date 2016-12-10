@@ -473,12 +473,7 @@ int main(int argc, char *argv[])
    // make a projection matrix   
    mat4 proj = perspective(radians(80.0f), 1.0f, 0.1f, 1000.0f);
 
-   // Timing variables
-   double lastTime = 0.0;
-   double accumulator = 0.0;
-
    // Angles
-   float sunAxis = radians(7.25f);
    float earthAxis = radians(23.f);
    float moonAxis = radians(6.68f);
    float moonInclination = radians(6.68f);
@@ -511,16 +506,25 @@ int main(int argc, char *argv[])
          moonOrbit += radians(0.2f);
       }
 
-      // Setup Models  
-      mat4 sunModel = translate(I, vec3(0.0f)) * rotate(I, sunAngle, vec3(0, 1, 0));
+      // Setup Models
+      mat4 sunModel = translate(I, vec3(0.0f)) * 
+         rotate(I, sunAngle, vec3(0, 1, 0));
+
       mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) *
          rotate(I, earthOrbit, vec3(0, 1, 0)) *
+         rotate(I, earthAngle, vec3(0, 1, 0)) *
          translate(I, vec3(12.0f, 0.0f, 0.0f)) *
-         rotate(I, earthAngle, vec3(0, 1, 0));
+         rotate(I, earthAxis, vec3(1, 0, 0));
+
+      vec4 earthUpVec = earthModel * vec4(0, 1, 0, 0);
+      vec3 earthUp = vec3(earthUpVec.x, earthUpVec.y, earthUpVec.z);
+
       mat4 moonModel = scale(earthModel, vec3(0.5f, 0.5f, 0.5f)) *
-         rotate(I, moonOrbit, vec3(0, 1, 0)) *
          translate(earthModel, vec3(0.0f, 0.0f, 0.0f)) *
+         rotate(I, moonOrbit, earthUp) *
+         rotate(I, earthAxis, vec3(0, 1, 0)) *
          rotate(I, moonAngle, vec3(0, 1, 0));
+
       mat4 galaxyModel = translate(I, vec3(0.0f)) *
          scale(I, vec3(50.f, 50.f, 50.f));
 
@@ -537,6 +541,8 @@ int main(int argc, char *argv[])
       RenderScene(&geometry, &shader, &galaxyTexture, proj, view, galaxyModel, vec3(0.0f), false);
 
       // Timing
+      double lastTime = 0.0;
+      double accumulator = 0.0;
       timeStep(lastTime, accumulator);
 
       glfwSwapBuffers(window);

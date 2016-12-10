@@ -89,9 +89,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
-    <ClInclude Include="GeometryNode.h" />
-    <ClInclude Include="SceneNode.h" />
-    <ClInclude Include="TranslationNode.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="planetTextures\texture_earth_surface.jpg" />
