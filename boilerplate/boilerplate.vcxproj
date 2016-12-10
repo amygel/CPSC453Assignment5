@@ -89,11 +89,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
+    <ClInclude Include="GeometryNode.h" />
+    <ClInclude Include="SceneNode.h" />
+    <ClInclude Include="TranslationNode.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="planetTextures\texture_earth_surface.jpg" />
     <Image Include="planetTextures\texture_moon.jpg" />
     <Image Include="planetTextures\texture_sun.jpg" />
+    <Image Include="textures\stars_milkyway.jpg" />
+    <Image Include="textures\texture_earth_surface.jpg" />
+    <Image Include="textures\texture_moon.jpg" />
+    <Image Include="textures\texture_sun.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

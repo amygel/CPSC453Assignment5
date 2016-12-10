@@ -304,7 +304,8 @@ void DestroyGeometry(MyGeometry *geometry)
 // --------------------------------------------------------------------------
 // Rendering function that draws our scene to the frame buffer
 
-void RenderScene(MyGeometry *geometry, MyShader *shader, MyTexture* texture, mat4 proj, mat4 view, mat4 model)
+void RenderScene(MyGeometry *geometry, MyShader *shader, MyTexture* texture, 
+   mat4 proj, mat4 view, mat4 model, vec3 light, bool isShaded)
 {
    // bind our shader program and the vertex array object
    glBindTexture(texture->target, texture->textureID);
@@ -312,14 +313,17 @@ void RenderScene(MyGeometry *geometry, MyShader *shader, MyTexture* texture, mat
    glBindVertexArray(geometry->vertexArray);
 
    // Get uniforms
-   glUseProgram(shader->program);
    GLint modelUniform = glGetUniformLocation(shader->program, "model");
    GLint viewUniform = glGetUniformLocation(shader->program, "view");
    GLint projUniform = glGetUniformLocation(shader->program, "proj");
+   GLint lightUniform = glGetUniformLocation(shader->program, "light");
+   GLint isShadedUniform = glGetUniformLocation(shader->program, "isShaded");
 
    glUniformMatrix4fv(modelUniform, 1, false, value_ptr(model));
    glUniformMatrix4fv(viewUniform, 1, false, value_ptr(view));
    glUniformMatrix4fv(projUniform, 1, false, value_ptr(proj));
+   glUniform3fv(lightUniform, 1, value_ptr(light));
+   glUniform1i(isShadedUniform, isShaded);
 
    // tell OpenGL to draw our geometry
    glDrawElements(GL_TRIANGLES, geometry->elementCount, GL_UNSIGNED_INT, 0);
@@ -411,7 +415,7 @@ int main(int argc, char *argv[])
    // attempt to create a window with an OpenGL 4.1 core profile context
    GLFWwindow *window = 0;
    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
    window = glfwCreateWindow(512, 512, "CPSC 453 OpenGL Assignment 5", 0, 0);
@@ -474,6 +478,10 @@ int main(int argc, char *argv[])
    double accumulator = 0.0;
 
    // Angles
+   float sunAxis = radians(7.25f);
+   float earthAxis = radians(23.f);
+   float moonAxis = radians(6.68f);
+   float moonInclination = radians(6.68f);
    float sunAngle = 0.f;
    float earthAngle = 0.f;
    float moonAngle = 0.f;
@@ -505,7 +513,7 @@ int main(int argc, char *argv[])
 
       // Setup Models  
       mat4 sunModel = translate(I, vec3(0.0f)) * rotate(I, sunAngle, vec3(0, 1, 0));
-      mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) * 
+      mat4 earthModel = scale(sunModel, vec3(0.65f, 0.65f, 0.65f)) *
          rotate(I, earthOrbit, vec3(0, 1, 0)) *
          translate(I, vec3(12.0f, 0.0f, 0.0f)) *
          rotate(I, earthAngle, vec3(0, 1, 0));
@@ -517,16 +525,16 @@ int main(int argc, char *argv[])
          scale(I, vec3(50.f, 50.f, 50.f));
 
       // Sun 
-      RenderScene(&geometry, &shader, &sunTexture, proj, view, sunModel);
+      RenderScene(&geometry, &shader, &sunTexture, proj, view, sunModel, vec3(0.0f), false);
 
       // Earth
-      RenderScene(&geometry, &shader, &earthTexture, proj, view, earthModel);
+      RenderScene(&geometry, &shader, &earthTexture, proj, view, earthModel, vec3(0.0f), true);
 
       // Moon
-      RenderScene(&geometry, &shader, &moonTexture, proj, view, moonModel);
+      RenderScene(&geometry, &shader, &moonTexture, proj, view, moonModel, vec3(0.0f), true);
 
       // Galaxy
-      RenderScene(&geometry, &shader, &galaxyTexture, proj, view, galaxyModel);
+      RenderScene(&geometry, &shader, &galaxyTexture, proj, view, galaxyModel, vec3(0.0f), false);
 
       // Timing
       timeStep(lastTime, accumulator);

@@ -36,6 +36,15 @@
     <ClInclude Include="camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SceneNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometryNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TranslationNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="planetTextures\texture_earth_surface.jpg">
@@ -45,6 +54,18 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="planetTextures\texture_sun.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="textures\stars_milkyway.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="textures\texture_earth_surface.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="textures\texture_moon.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="textures\texture_sun.jpg">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -13,6 +13,8 @@ layout(location = 1) in vec3 VertexNormal;
 
 // output to be interpolated between vertices and passed to the fragment stage
 out vec3 Normal;
+out vec3 VertNormal;
+out vec3 Position;
 
 // uniforms
 uniform mat4 model;
@@ -24,5 +26,7 @@ void main()
     // transformations applied right to left, order matters
     gl_Position = proj*view*model*vec4(VertexPosition, 1.0);
 
-	Normal = normalize(VertexNormal);
+	Normal = normalize(model*vec4(VertexNormal,0)).xyz;
+	VertNormal = VertexNormal;
+	Position = (model * vec4(Normal, 1)).xyz; 
 }

@@ -6,10 +6,13 @@
 // ==========================================================================
 #version 410
 
-// interpolated colour received from vertex stage
-in vec3 Normal;
+in vec3 Normal; // Surface normal in world space.
+in vec3 VertNormal; // Normal in object space
+in vec3 Position; // Position in world space.
 
-// first output is mapped to the framebuffer's colour index by default
+uniform vec3 light; // Light's position in world space.
+uniform bool isShaded;
+
 out vec4 FragmentColour;
 
 uniform sampler2D tex;
@@ -17,9 +20,18 @@ float PI = 3.1459;
 
 void main(void)
 {
-	float x = atan(Normal[0], Normal[2]) / (2.0f * PI) + 0.5f;
-	float y = asin(Normal[1])/ PI + 0.5f;
+    // Compute the diffuse term.
+    vec3 L = normalize(light - Position);
+    float diffuse = max(dot(Normal, L), 0);
+    
+	// Compute surface colour
+	float x = atan(VertNormal.x, VertNormal.z) / (2.0f * PI) + 0.5f;
+	float y = asin(VertNormal.y)/ PI + 0.5f;
 
-    // write colour output without modification
-    FragmentColour = texture(tex, vec2(x,y));
+    FragmentColour = texture(tex, vec2(x, y));
+
+	if(isShaded)
+	{
+		FragmentColour = FragmentColour * (0.3f + diffuse);
+	}
 }
